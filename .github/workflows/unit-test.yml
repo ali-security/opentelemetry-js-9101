@@ -2,7 +2,8 @@ name: Unit Tests
 on:
   push:
     branches:
-      - main
+    - main
+    - master
   pull_request:
   merge_group:
 
@@ -12,193 +13,203 @@ jobs:
       fail-fast: false
       matrix:
         node_version:
-          - "14"
-          - "16"
-          - "18"
-    runs-on: ubuntu-latest
+        - "14"
+        - "16"
+        - "18"
+    runs-on: ubuntu-22.04
     env:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Configure npm time machine registry
+      run: npm config set registry https://:2023-07-06T11%3A27%3A10.524000Z@time-machines-npm.sealsecurity.io/
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node_version }}
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node_version }}
 
-      - run: npm install -g npm@latest
+    - run: npm install -g npm@latest
 
-      - name: restore lerna
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            experimental/packages/*/node_modules
-            experimental/packages/*/package-lock.json
-          key: node-tests-${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}-04292022
+    - name: restore lerna
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          package-lock.json
+          packages/*/node_modules
+          packages/*/package-lock.json
+          experimental/packages/*/node_modules
+          experimental/packages/*/package-lock.json
+        key: node-tests-${{ runner.os }}-${{ matrix.node_version }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}-04292022
 
-      - name: Bootstrap
-        run: |
-          npm install --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --ignore @opentelemetry/selenium-tests
+    - name: Bootstrap
+      run: |
+        npm install --ignore-scripts
+        npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --ignore @opentelemetry/selenium-tests
 
-      - name: Build 🔧
-        run: |
-          npm run compile
+    - name: Build 🔧
+      run: |
+        npm run compile
 
-      - name: Unit tests
-        run: |
-          # TODO(legendecas): webpack https://stackoverflow.com/questions/69692842/error-message-error0308010cdigital-envelope-routinesunsupported
-          if [ "${{ matrix.node_version }}" = "18" ]; then
-            export NODE_OPTIONS=--openssl-legacy-provider
-          fi
-          npm run test
-      - name: Report Coverage
-        run: npm run codecov
-        if: ${{ matrix.node_version == '14' }}
+    - name: Unit tests
+      run: |
+        # TODO(legendecas): webpack https://stackoverflow.com/questions/69692842/error-message-error0308010cdigital-envelope-routinesunsupported
+        if [ "${{ matrix.node_version }}" = "18" ]; then
+          export NODE_OPTIONS=--openssl-legacy-provider
+        fi
+        npm run test
+    - name: Report Coverage
+      run: npm run codecov
+      if: ${{ matrix.node_version == '14' }}
   node-windows-tests:
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Configure npm time machine registry
+      run: npm config set registry https://:2023-07-06T11%3A27%3A10.524000Z@time-machines-npm.sealsecurity.io/
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16'
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '16'
 
-      - run: npm install -g npm@latest
+    - run: npm install -g npm@latest
 
-      - name: restore lerna
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            experimental/packages/*/node_modules
-            experimental/packages/*/package-lock.json
-          key: node-windows-tests-${{ runner.os }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}
+    - name: restore lerna
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          package-lock.json
+          packages/*/node_modules
+          packages/*/package-lock.json
+          experimental/packages/*/node_modules
+          experimental/packages/*/package-lock.json
+        key: node-windows-tests-${{ runner.os }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}
 
-      - name: Bootstrap
-        run: |
-          npm install --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --ignore @opentelemetry/selenium-tests
+    - name: Bootstrap
+      run: |
+        npm install --ignore-scripts
+        npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --ignore @opentelemetry/selenium-tests
 
-      - name: Build 🔧
-        run: |
-          npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
-          npm run compile
+    - name: Build 🔧
+      run: |
+        npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
+        npm run compile
 
-      - name: Unit tests
-        run: npm run test
+    - name: Unit tests
+      run: npm run test
   browser-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Configure npm time machine registry
+      run: npm config set registry https://:2023-07-06T11%3A27%3A10.524000Z@time-machines-npm.sealsecurity.io/
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
 
-      - name: restore lerna
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            experimental/packages/*/node_modules
-            experimental/packages/*/package-lock.json
-          key: browser-tests-${{ runner.os }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}-04292022
+    - name: restore lerna
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          package-lock.json
+          packages/*/node_modules
+          packages/*/package-lock.json
+          experimental/packages/*/node_modules
+          experimental/packages/*/package-lock.json
+        key: browser-tests-${{ runner.os }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}-04292022
 
-      - name: Bootstrap
-        run: |
-          npm install --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --ignore @opentelemetry/selenium-tests
+    - name: Bootstrap
+      run: |
+        npm install --ignore-scripts
+        npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --ignore @opentelemetry/selenium-tests
 
-      - name: Build 🔧
-        run: |
-          npm run compile
+    - name: Build 🔧
+      run: |
+        npm run compile
 
-      - name: Unit tests
-        run: npm run test:browser
-      - name: Report Coverage
-        run: npm run codecov:browser
+    - name: Unit tests
+      run: npm run test:browser
+    - name: Report Coverage
+      run: npm run codecov:browser
   webworker-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3.5.3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
+    - name: Configure npm time machine registry
+      run: npm config set registry https://:2023-07-06T11%3A27%3A10.524000Z@time-machines-npm.sealsecurity.io/
+    - name: Checkout
+      uses: actions/checkout@v3.5.3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
 
-      - name: restore lerna
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            experimental/packages/*/node_modules
-            experimental/packages/*/package-lock.json
-          key: webworker-tests-${{ runner.os }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}-04292022
+    - name: restore lerna
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          package-lock.json
+          packages/*/node_modules
+          packages/*/package-lock.json
+          experimental/packages/*/node_modules
+          experimental/packages/*/package-lock.json
+        key: webworker-tests-${{ runner.os }}-${{ hashFiles('package.json', 'packages/*/package.json', 'experimental/packages/*/package.json') }}-04292022
 
-      - name: Bootstrap
-        run: |
-          npm install --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js'
+    - name: Bootstrap
+      run: |
+        npm install --ignore-scripts
+        npx lerna bootstrap --no-ci --hoist --nohoist='zone.js'
 
-      - name: Build 🔧
-        run: |
-          npm run compile
+    - name: Build 🔧
+      run: |
+        npm run compile
 
-      - name: Unit tests
-        run: npm run test:webworker
-      - name: Report Coverage
-        run: npm run codecov:webworker
+    - name: Unit tests
+      run: npm run test:webworker
+    - name: Report Coverage
+      run: npm run codecov:webworker
   api-eol-node-test:
     strategy:
       fail-fast: false
       matrix:
         node_version:
-          - "8"
-          - "10"
-          - "12"
-    runs-on: ubuntu-latest
+        - "8"
+        - "10"
+        - "12"
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Configure npm time machine registry
+      run: npm config set registry https://:2023-07-06T11%3A27%3A10.524000Z@time-machines-npm.sealsecurity.io/
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node_version }}
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node_version }}
 
-      - name: Build
-        working-directory: ./api
-        run: |
-          npm install --ignore-scripts
-          npm install @types/mocha@^7 mocha@^7 ts-loader@^8 ts-mocha@^8
-          node ../scripts/version-update.js
-          npx tsc --build tsconfig.json tsconfig.esm.json
+    - name: Build
+      working-directory: ./api
+      run: |
+        npm install --ignore-scripts
+        npm install @types/mocha@^7 mocha@^7 ts-loader@^8 ts-mocha@^8
+        node ../scripts/version-update.js
+        npx tsc --build tsconfig.json tsconfig.esm.json
 
-      - name: Test
-        working-directory: ./api
-        run: npm test
+    - name: Test
+      working-directory: ./api
+      run: npm test
